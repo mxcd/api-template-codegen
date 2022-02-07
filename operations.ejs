@@ -1,0 +1,32 @@
+type Query {
+<% for(const model of models) { %>
+<% if(model.methods['read']) { %>
+    """
+    Delivers multiple <%= model.upperCamelCasePluralName %>
+    search fields: [<%= model.searchFields.map(f => f.name) %>]
+    filter fields: [<%= model.filterFields.map(f => f.name) %>]
+    """
+    <%= model.lowerCamelCasePluralName %>(limit: Int! = <%= DEFAULT_QUERY_LIMIT %>, offset: Int! = 0<%= model.searchFields.length !== 0 ? `, search: String` : ''%><%= model.filterFields.length !== 0 ? `, filter: ${model.upperCamelCasePluralName}FilterInput` : ''%><%= model.sortFields.length !== 0 ? `, sort: ${model.upperCamelCasePluralName}SortInput` : ''%>): <%= model.upperCamelCasePluralName %>Payload!
+
+    """
+    Delivers a single <%= model.upperCamelCaseName %> by id
+    """
+    <%= model.lowerCamelCaseName %>(id: <%= model.idType %>!): <%= model.upperCamelCaseName %>
+<% } %>
+<% } %>
+}
+
+type Mutation {
+<% for(const model of models) { -%>
+<% if(model.methods['create']) { -%>
+    create<%= model.upperCamelCaseName %>(inputs: <%= model.upperCamelCaseName %>CreateInput!): <%= model.upperCamelCaseName %>!
+<% } -%>
+<% if(model.methods['update']) { -%>
+    edit<%= model.upperCamelCaseName %>(id: <%= model.idType %>!, inputs: <%= model.upperCamelCaseName %>EditInput!): <%= model.upperCamelCaseName %>!
+<% } -%>
+<% if(model.methods['delete']) { -%>
+    delete<%= model.upperCamelCaseName %>(id: <%= model.idType %>!): Boolean!
+<% } -%>
+
+<% } -%>
+}

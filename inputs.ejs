@@ -1,0 +1,75 @@
+input DateRange {
+    lte: DateTime
+    gte: DateTime
+}
+
+input IntRange {
+    lte: Int
+    gte: Int
+}
+
+input FloatRange {
+    lte: Float
+    gte: Float
+}
+
+<% for(const model of models) { %>
+    <%_ if(model.filterFields.length !== 0) { -%>
+input <%= model.upperCamelCasePluralName%>FilterInput {
+        <%_ for(const field of model.filterFields) { -%>
+            <%_ if(field.dataType === 'DateTime') { -%>
+    <%= field.name %>: DateTime
+    <%= field.name %>Range: DateRange
+            <%_ } else if(field.dataType === 'Int') { -%>
+    <%= field.name %>: <%= field.dataType %>
+    <%= field.name %>Range: IntRange
+            <%_ } else if(field.dataType === 'Float') { -%>
+    <%= field.name %>: <%= field.dataType %>
+    <%= field.name %>Range: FloatRange
+            <%_ } else { -%>
+    <%= field.name %>: <%= field.dataType %>
+            <%_ } -%>
+        <%_ } -%>
+
+}
+    <%_ } -%>
+    <%_ if(model.sortFields.length !== 0) { -%>
+input <%= model.upperCamelCasePluralName%>SortInput {
+        <%_ for(const field of model.sortFields) { -%>
+    <%= field.name %>: SortDirection
+        <%_ } -%>
+}
+    <%_ } -%>
+
+input <%= model.upperCamelCaseName %>EditInput {
+    <%_ for(const field of model.fields) { -%>
+        <%_ if(field.name !== 'createdDate' && field.name !== 'modifiedDate' && field.name !== 'createdBy' && field.name !== 'modifiedBy' && field.name !== 'id') { -%>
+            <%_ if(field.isModel) { -%>
+                <%_ if(field.isArray) { -%>
+    <%= field.name %>: [Int!]
+                <%_ } else { -%>
+    <%= field.name %>: Int
+                <%_ } -%>
+            <%_ } else { -%>
+    <%= field.name %>: <%= field.dataType %>
+            <%_ } -%>
+        <%_ } -%>
+    <%_ } -%>
+}
+
+input <%= model.upperCamelCaseName %>CreateInput {
+<%_ for(const field of model.fields) { -%>
+    <%_ if(field.name !== 'createdDate' && field.name !== 'modifiedDate' && field.name !== 'createdBy' && field.name !== 'modifiedBy' && field.name !== 'id') { -%>
+        <%_ if(field.isModel) { -%>
+            <%_ if(field.isArray) { -%>
+    <%= field.name %>: [Int!]
+            <%_ } else { -%>
+    <%= field.name %>: Int
+            <%_ } -%>
+        <%_ } else { -%>
+    <%= field.name %>: <%= field.dataType %><%= field.isRequired ? '!' : '' %>
+        <%_ } -%>
+    <%_ } -%>
+<%_ } -%>
+}
+<% } %>
