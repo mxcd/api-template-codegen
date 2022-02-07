@@ -1,30 +1,38 @@
 import { IResolvers } from 'graphql-tools';
 <% for(const model of models) { -%>
-import {get<%= model.upperCamelCaseName %>, get<%= model.upperCamelCasePluralName %>, create<%= model.upperCamelCaseName %>, edit<%= model.upperCamelCaseName %>, delete<%= model.upperCamelCaseName %><% for(const relationField of model.relationFields) { %>, get<%= relationField.name.charAt(0).toUpperCase() + relationField.name.slice(1) %>For<%= model.upperCamelCaseName %><% } %>} from "./<%= model.upperCamelCaseName %>Controller";
+import {<%= model.methods.read ? `get${model.upperCamelCaseName}, get${model.upperCamelCasePluralName}, `:`` %><%= model.methods.create ? `create${model.upperCamelCaseName}, ` : `` %><%= model.methods.update ? `edit${model.upperCamelCaseName}, ` : `` %><%= model.methods.delete ? `delete${model.upperCamelCaseName}, ` : `` %><% for(const relationField of model.relationFields) { %>get<%= relationField.name.charAt(0).toUpperCase() + relationField.name.slice(1) %>For<%= model.upperCamelCaseName %>, <% } %>} from "./<%= model.upperCamelCaseName %>Controller";
 <% } -%>
 
 const resolvers: IResolvers = {
     Query: {
 <% for(const model of models) { -%>
+    <%_ if(model.methods.read) { _%>
         <%= model.lowerCamelCaseName %>(parent, args, context, info) {
             return get<%= model.upperCamelCaseName %>(parent, args, context, info);
         },
         <%= model.lowerCamelCasePluralName %>(parent, args, context, info) {
             return get<%= model.upperCamelCasePluralName %>(parent, args, context, info);
         },
-<% } -%>
+    <%_ } -%>
+<%_ } -%>
     },
     Mutation: {
 <% for(const model of models) { -%>
+    <%_ if(model.methods.create) { _%>
         create<%= model.upperCamelCaseName %>(parent, args, context, info) {
             return create<%= model.upperCamelCaseName %>(parent, args, context, info);
         },
+    <%_ } -%>
+    <%_ if(model.methods.update) { _%>
         edit<%= model.upperCamelCaseName %>(parent, args, context, info) {
             return edit<%= model.upperCamelCaseName %>(parent, args, context, info);
         },
+    <%_ } -%>
+    <%_ if(model.methods.delete) { _%>
         delete<%= model.upperCamelCaseName %>(parent, args, context, info) {
             return delete<%= model.upperCamelCaseName %>(parent, args, context, info);
         },
+    <%_ } -%>
 <% } -%>
     },
 <% for(const model of models) { -%>
