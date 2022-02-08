@@ -91,7 +91,8 @@ do {
                 console.log(`\t => ${fieldMatch[1]}`)
                 let field:any = {
                     name: fieldMatch[1],
-                    type: fieldMatch[2]
+                    type: fieldMatch[2],
+                    private: false
                 }
 
                 field.lowerCamelCaseName = field.name;
@@ -118,6 +119,9 @@ do {
                 }
                 if(annotationMatch[1].indexOf("@sort") !== -1) {
                     model.sortFields.push(field)
+                }
+                if(annotationMatch[1].indexOf("@private") !== -1) {
+                    field.private = true;
                 }
             }
         } while(annotationMatch)
