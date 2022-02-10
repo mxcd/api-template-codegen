@@ -141,7 +141,14 @@ do {
                 model.methods[method.name] = {auth: DEFAULT_AUTH_BLOCK, groups: []}
                 const modelMethodMatch = method.regex.exec(annotationMatch[1]);
                 if(modelMethodMatch) {
-                    const methodParameter = JSON.parse(modelMethodMatch[1])
+                    let methodParameter;
+                    try {
+                        methodParameter = JSON.parse(modelMethodMatch[1])
+                    } catch (e) {
+                        console.log(`error parsing method parameter for ${method.name}`)
+                        console.log(modelMethodMatch[1])
+                        throw new Error(`Invalid schema`)
+                    }
                     if(typeof(methodParameter) !== 'undefined') {
                         Object.assign(model.methods[method.name], methodParameter)
                     }
