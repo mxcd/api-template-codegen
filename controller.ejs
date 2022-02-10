@@ -88,11 +88,11 @@ export async function get<%= model.upperCamelCasePluralName%>(parent, args, cont
         })
     ])
     const total = results[0];
-    const <%= model.lowerCamelCasePluralName %> = results[1];
+    const items = results[1];
 
     return {
         total,
-        <%= model.lowerCamelCasePluralName %>
+        items
     };
 }
 <% } -%>
@@ -180,7 +180,7 @@ export async function create<%= model.upperCamelCaseName %>(parent, args, contex
 
     const data:any = {}
     <%_ for(const field of model.fields) { -%>
-        <%_ if(field.name !== 'createdDate' && field.name !== 'createdBy' && field.name !== 'modifiedDate' && field.name !== 'modifiedBy' && field.name !== 'id') { -%>
+        <%_ if(field.name !== 'createdAt' && field.name !== 'createdBy' && field.name !== 'modifiedAt' && field.name !== 'modifiedBy' && field.name !== 'id') { -%>
             <%_ if(field.isModel) { -%>
                 <%_ if(field.isArray) { -%>
     if('<%= field.name %>' in args.inputs) {
@@ -220,7 +220,7 @@ export async function edit<%= model.upperCamelCaseName %>(parent, args, context,
     const id = args.id;
     const data:any = {}
     <%_ for(const field of model.fields) { -%>
-        <%_ if(field.name !== 'createdDate' && field.name !== 'createdBy' && field.name !== 'modifiedDate' && field.name !== 'modifiedBy' && field.name !== 'id') { -%>
+        <%_ if(field.name !== 'createdAt' && field.name !== 'createdBy' && field.name !== 'modifiedAt' && field.name !== 'modifiedBy' && field.name !== 'id') { -%>
             <%_ if(field.isModel) { -%>
                 <%_ if(field.isArray) { -%>
     if('<%= field.name %>' in args.inputs) {
@@ -239,7 +239,7 @@ export async function edit<%= model.upperCamelCaseName %>(parent, args, context,
         <%_ } -%>
     <%_ } -%>
     data['modifiedBy'] = typeof(context.user) !== 'undefined' && typeof(context.user.username) !== 'undefined' ? context.user.username : 'undefined'
-    data['modifiedDate'] = new Date();
+    data['modifiedAt'] = new Date();
     
     const <%= model.lowerCamelCaseName %> = await prisma.<%= model.lowerCamelCaseName %>.update({where: {id}, data});
     return <%= model.lowerCamelCaseName %>;

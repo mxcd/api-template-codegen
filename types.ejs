@@ -24,6 +24,6 @@ type <%= model.upperCamelCaseName %> {
 <% for(const model of models) { %>
 type <%= model.upperCamelCasePluralName %>Payload {
     total: Int!
-    <%= model.lowerCamelCasePluralName %>: [<%= model.upperCamelCaseName %>!]!
+    items: [<%= model.upperCamelCaseName %>!]!
 }
 <% } %>
