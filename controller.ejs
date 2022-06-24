@@ -1,21 +1,17 @@
 // @ts-ignore
-import {prisma, authBlock, authedUserInGroups} from "../util";
+import {prisma, authBlock, authedUserInGroups, checkAuthorization, lifecycleHook} from "../util";
 // @ts-ignore
 import {ApolloError, ForbiddenError} from "apollo-server-errors";
 
 <%_ if(model.methods['read']) { %>
 export async function get<%= model.upperCamelCaseName %>(parent, args, context, info) {
-<%_ if(model.methods.read.auth) { -%>
-    authBlock(context);
-<%_ } -%>
-<%_ if(model.methods.read.groups.length !== 0) { -%>
-    const authorizedGroups = [<%- model.methods.read.groups.map(e => `'${e}'`).join(",") %>];
-    if(!authedUserInGroups(context, authorizedGroups)) {
-        throw new ForbiddenError(`User is not authorized to perform this action. Authorized groups are ${authorizedGroups}`)
-    }
-<%_ } -%>
+
+    await checkAuthorization(`get<%= model.upperCamelCaseName %>`, context);
+
     const id = args.id;
+    await lifecycleHook(`preFetch`, `get<%= model.upperCamelCaseName %>`, { args, context });
     const <%= model.lowerCamelCaseName %> = await prisma.<%= model.lowerCamelCaseName %>.findUnique({where: {id}});
+    await lifecycleHook(`postFetch`, `get<%= model.upperCamelCaseName %>`, { item: <%= model.lowerCamelCaseName %>, args, context });
     if(!<%= model.lowerCamelCaseName %>) {
         throw new ApolloError(`No <%= model.upperCamelCaseName %> with ID '${id}' found`, "NOT_FOUND")
     }
@@ -25,15 +21,9 @@ export async function get<%= model.upperCamelCaseName %>(parent, args, context, 
 
 <%_ if(model.methods['read']) { %>
 export async function get<%= model.upperCamelCasePluralName%>(parent, args, context, info) {
-<%_ if(model.methods.read.auth) { -%>
-    authBlock(context);
-<%_ } -%>
-<%_ if(model.methods.read.groups.length !== 0) { -%>
-    const authorizedGroups = [<%- model.methods.read.groups.map(e => `'${e}'`).join(",") %>];
-    if(!authedUserInGroups(context, authorizedGroups)) {
-        return {total: 0, <%= model.lowerCamelCasePluralName %>: []}
-    }
-<%_ } -%>
+
+    await checkAuthorization(`get<%= model.upperCamelCasePluralName%>`, context);
+
     const filter:any = args.filter;
     const search:string = args.search;
     const sort: any = args.sort;
@@ -78,6 +68,7 @@ export async function get<%= model.upperCamelCasePluralName%>(parent, args, cont
         }
     }
 
+    await lifecycleHook(`preFetchList`, `get<%= model.upperCamelCasePluralName%>`, { where, limit, offset, orderBy, args, context });
     const results = await prisma.$transaction([
         prisma.<%= model.lowerCamelCaseName %>.count({where}),
         prisma.<%= model.lowerCamelCaseName %>.findMany({
@@ -89,7 +80,7 @@ export async function get<%= model.upperCamelCasePluralName%>(parent, args, cont
     ])
     const total = results[0];
     const items = results[1];
-
+    await lifecycleHook(`postFetchList`, `get<%= model.upperCamelCasePluralName%>`, { total, items, args, context });
     return {
         total,
         items
@@ -99,15 +90,8 @@ export async function get<%= model.upperCamelCasePluralName%>(parent, args, cont
 
 <% for(const relationField of model.relationFields) { %>
 export async function get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>(parent, args, context, info) {
-    <% if(model.methods.read.auth) { -%>
-    authBlock(context);
-<% } -%>
-<% if(model.methods.read.groups.length !== 0) { -%>
-    const authorizedGroups = [<%- model.methods.read.groups.map(e => `'${e}'`).join(",") %>];
-    if(!authedUserInGroups(context, authorizedGroups)) {
-        return [];
-    }
-<% } -%>
+    
+    await checkAuthorization(`get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>`, context);
 
     const id = parent.id;
 
@@ -144,15 +128,18 @@ export async function get<%= relationField.upperCamelCaseName %>For<%= model.upp
         }
     }
 
+    await lifecycleHook(`preFetchRelationalList`, `get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>`, { limit, offset, where, orderBy, args, context, parent });
     const <%= model.lowerCamelCaseName %> = await prisma.<%= model.lowerCamelCaseName %>.findUnique({
         where: {id},
         include: {
             <%= relationField.name %>: { take: limit, skip: offset, where, orderBy}
     }});
     <%_ } else { -%>
+    await lifecycleHook(`preFetchRelationalList`, `get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>`, { args, context, parent });
     const <%= model.lowerCamelCaseName %> = await prisma.<%= model.lowerCamelCaseName %>.findUnique({where: {id}, include: {<%= relationField.name %>: true}})
     <%_ } -%>
 
+    await lifecycleHook(`postFetchRelationalList`, `get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>`, { item: <%= model.lowerCamelCaseName %>, args, context, parent });
     if(<%= model.lowerCamelCaseName %> !== null) {
         return <%= model.lowerCamelCaseName %>.<%= relationField.name %>;
     }
@@ -168,15 +155,8 @@ export async function get<%= relationField.upperCamelCaseName %>For<%= model.upp
 
 <% if(model.methods['create']) { %>
 export async function create<%= model.upperCamelCaseName %>(parent, args, context, info) {
-<% if(model.methods.create.auth) { -%>
-    authBlock(context);
-<% } -%>
-<% if(model.methods.create.groups.length !== 0) { -%>
-    const authorizedGroups = [<%- model.methods.create.groups.map(e => `'${e}'`).join(",") %>];
-    if(!authedUserInGroups(context, authorizedGroups)) {
-        throw new ForbiddenError(`User is not authorized to perform this action. Authorized groups are ${authorizedGroups}`)
-    }
-<% } -%>
+
+    await checkAuthorization(`create<%= model.upperCamelCaseName %>`, context);
 
     const data:any = {}
     <%_ for(const field of model.fields) { -%>
@@ -200,23 +180,18 @@ export async function create<%= model.upperCamelCaseName %>(parent, args, contex
     <%_ } -%>
     data['createdBy'] = typeof(context.user) !== 'undefined' && typeof(context.user.username) !== 'undefined' ? context.user.username : 'undefined'
     data['modifiedBy'] = typeof(context.user) !== 'undefined' && typeof(context.user.username) !== 'undefined' ? context.user.username : 'undefined'
-
+    await lifecycleHook(`preCreate`, `create<%= model.upperCamelCaseName %>`, { data, args, context });
     const <%= model.lowerCamelCaseName %> = await prisma.<%= model.lowerCamelCaseName %>.create({data});
+    await lifecycleHook(`postCreate`, `create<%= model.upperCamelCaseName %>`, { item: <%= model.lowerCamelCaseName %>, args, context });
     return <%= model.lowerCamelCaseName %>;
 }
 <% } -%>
 
 <% if(model.methods['update']) { %>
 export async function edit<%= model.upperCamelCaseName %>(parent, args, context, info) {
-<% if(model.methods.update.auth) { -%>
-    authBlock(context);
-<% } -%>
-<% if(model.methods.update.groups.length !== 0) { -%>
-    const authorizedGroups = [<%- model.methods.update.groups.map(e => `'${e}'`).join(",") %>];
-    if(!authedUserInGroups(context, authorizedGroups)) {
-        throw new ForbiddenError(`User is not authorized to perform this action. Authorized groups are ${authorizedGroups}`)
-    }
-<% } -%>
+
+    await checkAuthorization(`edit<%= model.upperCamelCaseName %>`, context);
+
     const id = args.id;
     const data:any = {}
     <%_ for(const field of model.fields) { -%>
@@ -241,24 +216,22 @@ export async function edit<%= model.upperCamelCaseName %>(parent, args, context,
     data['modifiedBy'] = typeof(context.user) !== 'undefined' && typeof(context.user.username) !== 'undefined' ? context.user.username : 'undefined'
     data['modifiedAt'] = new Date();
     
+    await lifecycleHook(`preUpdate`, `edit<%= model.upperCamelCaseName %>`, { data, args, context });
     const <%= model.lowerCamelCaseName %> = await prisma.<%= model.lowerCamelCaseName %>.update({where: {id}, data});
+    await lifecycleHook(`postUpdate`, `edit<%= model.upperCamelCaseName %>`, { item: <%= model.lowerCamelCaseName %>, args, context });
     return <%= model.lowerCamelCaseName %>;
 }
 <% } -%>
 
 <% if(model.methods['delete']) { %>
 export async function delete<%= model.upperCamelCaseName %>(parent, args, context, info) {
-<% if(model.methods.delete.auth) { -%>
-    authBlock(context);
-<% } -%>
-<% if(model.methods.delete.groups.length !== 0) { -%>
-    const authorizedGroups = [<%- model.methods.delete.groups.map(e => `'${e}'`).join(",") %>];
-    if(!authedUserInGroups(context, authorizedGroups)) {
-        throw new ForbiddenError(`User is not authorized to perform this action. Authorized groups are ${authorizedGroups}`)
-    }
-<% } -%>
+
+    await checkAuthorization(`delete<%= model.upperCamelCaseName %>`, context);
+    
     const id = args.id;
+    await lifecycleHook(`postDelete`, `delete<%= model.upperCamelCaseName %>`, { args, context });
     await prisma.<%= model.lowerCamelCaseName %>.delete({where: {id}});
+    await lifecycleHook(`postDelete`, `delete<%= model.upperCamelCaseName %>`, { args, context });
     return true;
 }
 <% } -%>
