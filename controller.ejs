@@ -6,7 +6,7 @@ import {ApolloError, ForbiddenError} from "apollo-server-errors";
 <%_ if(model.methods['read']) { %>
 export async function get<%= model.upperCamelCaseName %>(parent, args, context, info) {
 
-    await checkAuthorization(`get<%= model.upperCamelCaseName %>`, context);
+    await checkAuthorization(`get<%= model.upperCamelCaseName %>`, {parent, args, context, info});
 
     const id = args.id;
     await lifecycleHook(`preFetch`, `get<%= model.upperCamelCaseName %>`, { args, context });
@@ -22,15 +22,16 @@ export async function get<%= model.upperCamelCaseName %>(parent, args, context, 
 <%_ if(model.methods['read']) { %>
 export async function get<%= model.upperCamelCasePluralName%>(parent, args, context, info) {
 
-    await checkAuthorization(`get<%= model.upperCamelCasePluralName%>`, context);
+    await checkAuthorization(`get<%= model.upperCamelCasePluralName%>`, {parent, args, context, info});
 
     const filter:any = args.filter;
     const search:string = args.search;
     const sort: any = args.sort;
     let where: any = {};
 
+    where['AND'] = [];
+
     if(filter) {
-        where['AND'] = [];
 <% for(const filterField of model.filterFields) { -%>
     <%_ if(filterField.dataType === 'DateTime' || filterField.dataType === 'Int' || filterField.dataType === 'Float') { -%>
         // Filter for <%= filterField.name %> range
@@ -91,7 +92,7 @@ export async function get<%= model.upperCamelCasePluralName%>(parent, args, cont
 <% for(const relationField of model.relationFields) { %>
 export async function get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>(parent, args, context, info) {
     
-    await checkAuthorization(`get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>`, context);
+    await checkAuthorization(`get<%= relationField.upperCamelCaseName %>For<%= model.upperCamelCaseName %>`, {parent, args, context, info});
 
     const id = parent.id;
 
@@ -101,8 +102,9 @@ export async function get<%= relationField.upperCamelCaseName %>For<%= model.upp
     const sort: any = args.sort;
     let where: any = {};
 
+    where['AND'] = [];
+
     if(filter) {
-        where['AND'] = [];
         <%_ for(const filterField of relationField.model.filterFields) { -%>
         if(filter.<%= filterField.name %>) where['AND'].push({<%= filterField.name %>: {<%= filterField.filterMode %>: filter.<%= filterField.name %>}});
         <%_ } -%>
@@ -156,7 +158,7 @@ export async function get<%= relationField.upperCamelCaseName %>For<%= model.upp
 <% if(model.methods['create']) { %>
 export async function create<%= model.upperCamelCaseName %>(parent, args, context, info) {
 
-    await checkAuthorization(`create<%= model.upperCamelCaseName %>`, context);
+    await checkAuthorization(`create<%= model.upperCamelCaseName %>`, {parent, args, context, info});
 
     const data:any = {}
     <%_ for(const field of model.fields) { -%>
@@ -190,7 +192,7 @@ export async function create<%= model.upperCamelCaseName %>(parent, args, contex
 <% if(model.methods['update']) { %>
 export async function edit<%= model.upperCamelCaseName %>(parent, args, context, info) {
 
-    await checkAuthorization(`edit<%= model.upperCamelCaseName %>`, context);
+    await checkAuthorization(`edit<%= model.upperCamelCaseName %>`, {parent, args, context, info});
 
     const id = args.id;
     const data:any = {}
@@ -226,7 +228,7 @@ export async function edit<%= model.upperCamelCaseName %>(parent, args, context,
 <% if(model.methods['delete']) { %>
 export async function delete<%= model.upperCamelCaseName %>(parent, args, context, info) {
 
-    await checkAuthorization(`delete<%= model.upperCamelCaseName %>`, context);
+    await checkAuthorization(`delete<%= model.upperCamelCaseName %>`, {parent, args, context, info});
     
     const id = args.id;
     await lifecycleHook(`postDelete`, `delete<%= model.upperCamelCaseName %>`, { args, context });
