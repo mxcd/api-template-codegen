@@ -51,7 +51,7 @@ export async function get<%= model.upperCamelCasePluralName%>(parent, args, cont
     if(search) {
         where['OR'] = [
 <% for(const searchField of model.searchFields) { -%>
-            {<%= searchField.name %>: {<%= searchField.searchMode %>: search}},
+            {<%= searchField.name %>: {<%= searchField.searchMode %>: search, mode: `insensitive`}},
 <% } -%>
         ]
     }
@@ -111,7 +111,7 @@ export async function get<%= relationField.upperCamelCaseName %>For<%= model.upp
     if(search) {
         where['OR'] = [
         <%_ for(const searchField of relationField.model.searchFields) { -%>
-            {<%= searchField.name %>: {<%= searchField.searchMode %>: search}},
+            {<%= searchField.name %>: {<%= searchField.searchMode %>: search, mode: `insensitive`}},
         <%_ } -%>
         ]
     }
